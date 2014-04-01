@@ -1554,6 +1554,77 @@ class CRL(object):
             _raise_current_error()
 
 
+    def set_version(self, version):
+        """
+        Set the version subfield (RFC 2459, section 5.1.2.1) of the CRL.
+
+        :param version: The version number
+        :type version: :py:class:`int`
+
+        :return: None
+        """
+        if not isinstance(version, int):
+            raise TypeError("version must be an integer")
+
+        set_result = _lib.X509_CRL_set_version(self._crl, version)
+        if not set_result:
+            _raise_current_error()
+
+
+    def get_version(self):
+        """
+        Get the version subfield (RFC 2459, section 5.1.2.1) of the CRL.
+
+        :return: an integer giving the value of the version subfield
+        """
+        return _lib.X509_CRL_get_version(self._crl)
+
+
+    def get_issuer(self):
+        """
+        Create an X509Name object for the issuer of the CRL
+
+        :return: An X509Name object
+        """
+        name = X509Name.__new__(X509Name)
+        name._name = _lib.X509_CRL_get_issuer(self._crl)
+        if name._name == _ffi.NULL:
+            # TODO: This is untested.
+            _raise_current_error()
+
+        # The name is owned by the X509Req structure.  As long as the X509Name
+        # Python object is alive, keep the X509Req Python object alive.
+        name._owner = self
+
+        return name
+
+
+    def get_last_update(self):
+        """
+        Retrieve the CRL last update
+
+        :return: A string giving the timestamp, in the format:
+
+                         YYYYMMDDhhmmssZ
+                         YYYYMMDDhhmmss+hhmm
+                         YYYYMMDDhhmmss-hhmm
+        """
+        return _get_asn1_time(_lib.X509_CRL_get_lastUpdate(self._crl))
+
+
+    def get_next_update(self):
+        """
+        Retrieve the CRL next update
+
+        :return: A string giving the timestamp, in the format:
+
+                         YYYYMMDDhhmmssZ
+                         YYYYMMDDhhmmss+hhmm
+                         YYYYMMDDhhmmss-hhmm
+        """
+        return _get_asn1_time(_lib.X509_CRL_get_nextUpdate(self._crl))
+
+
     def export(self, cert, key, type=FILETYPE_PEM, days=100):
         """
         export a CRL as a string
